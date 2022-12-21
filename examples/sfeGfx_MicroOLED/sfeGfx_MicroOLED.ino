@@ -87,6 +87,7 @@ const colorDef<uint16_t> colors[6] MEMMODE={
 #define fontY 8
 #define MAX_DEPTH 2
 
+//initializing output and menu nav with macros
 serialIn serial(Serial);
 MENU_INPUTS(in,&serial);
 
@@ -115,7 +116,7 @@ idx_t gfx_tops[MAX_DEPTH];
 PANELS(gfxPanels,{0,0,gfxWidth/fontX,gfxHeight/fontY});
 sfe_mOledOut sfeOut(gfx,colors,gfx_tops,gfxPanels);
 
-menuOut* const outputs[] MEMMODE={&outSerial,&sfeOut};//list of output devices
+menuOut* outputs[] MEMMODE={&outSerial,&sfeOut};//list of output devices
 outputsList out(outputs,2);//outputs list controller
 
 //define input device
