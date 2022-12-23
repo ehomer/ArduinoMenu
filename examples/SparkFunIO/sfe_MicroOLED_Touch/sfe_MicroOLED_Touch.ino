@@ -13,19 +13,25 @@ input: Serial
 
 #include <Wire.h>
 #include <SFE_MicroOLED.h> //Click here to get the library: http://librarymanager/All#SparkFun_Micro_OLED
+#include <SparkFun_CAP1203.h> // Click here to get the library: http://librarymanager/All#SparkFun_CAP1203
 
 #include <menu.h>
 #include <menuIO/chainStream.h>
 #include <menuIO/serialOut.h>
-#include <menuIO/SFE_MicroOledOut.h>
 #include <menuIO/serialIn.h>
-
+#include <menuIO/keyIn.h>
+#include <menuIO/SFE_MicroOledOut.h>
+#include <menuIO/SFE_TouchEncoderIn.h>
 
 using namespace Menu;
 
 //SFE_MicroOLED gfx(PIN_RESET); - connecting with I2C
 #define PIN_RESET 9 // Optional - Connect RST on display to pin 9 on Arduino
 MicroOLED gfx(PIN_RESET); //I2C declaration -  The TwoWire I2C port is passed to .begin instead
+// Capacitive Touch Declarations
+CAP1203 touchsensor; // Initialize sensor
+TouchEncoderStream encStream(touchsensor); // Initialize the encoderStream
+serialIn serial(Serial); //define serial input device
 
 #define LEDPIN LED_BUILTIN
 
@@ -81,6 +87,8 @@ const colorDef<uint16_t> colors[6] MEMMODE={
   {{BLACK,WHITE},{WHITE,BLACK,BLACK}},//titleColor
 };
 
+
+
 #define gfxWidth 64
 #define gfxHeight 48
 #define fontX 5
@@ -88,18 +96,17 @@ const colorDef<uint16_t> colors[6] MEMMODE={
 #define MAX_DEPTH 2
 
 //initializing output and menu nav with macros
-serialIn serial(Serial);
-MENU_INPUTS(in,&serial);
+/*MENU_INPUTS(in,&serial);
 
 MENU_OUTPUTS(out,MAX_DEPTH
   ,SFEGFX_OUT(gfx,colors,fontX,fontY,{0,0,gfxWidth/fontX,gfxHeight/fontY})
   ,SERIAL_OUT(Serial)
 );
 
-NAVROOT(nav,mainMenu,MAX_DEPTH,in,out);
+NAVROOT(nav,mainMenu,MAX_DEPTH,in,out);*/
 
 //initializing output and menu nav without macros
-/*const panel default_serial_panels[] MEMMODE={{0,0,40,10}};
+const panel default_serial_panels[] MEMMODE={{0,0,40,10}};
 navNode* default_serial_nodes[sizeof(default_serial_panels)/sizeof(panel)];
 panelsList default_serial_panel_list(
   default_serial_panels,
@@ -119,12 +126,12 @@ sfe_mOledOut sfeOut(gfx,colors,gfx_tops,gfxPanels);
 menuOut* outputs[] MEMMODE={&outSerial,&sfeOut};//list of output devices
 outputsList out(outputs,2);//outputs list controller
 
-//define input device
-serialIn serial(Serial);
+menuIn* inputsList[]={&encStream,&serial};
+chainStream<2> in(inputsList);
 
 //define navigation root and aux objects
 navNode nav_cursors[MAX_DEPTH];//aux objects to control each level of navigation
-navRoot nav(mainMenu, nav_cursors, MAX_DEPTH, serial, out);*/
+navRoot nav(mainMenu, nav_cursors, MAX_DEPTH, in, out);
 
 result alert(menuOut& o,idleEvent e) {
   if (e==idling) {
@@ -170,6 +177,14 @@ void setup() {
   delay(1000);
   gfx.clear(PAGE); // Clear the display's internal memory
 
+  // Setup sensor
+  if (touchsensor.begin() == false) {
+    Serial.println("Not connected. Please check connections and read the hookup guide.");
+    while (1);
+  }
+  else {
+    Serial.println("Connected!");
+  }
   
   gfx.println(F("Menu 4.x test on GFX"));
   gfx.display(); // show splashscreen
